@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hackathon Live Status</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #50e3c2;
+            --background-start: #1e3c72;
+            --background-end: #2a5298;
+            --card-background: rgba(255, 255, 255, 0.08);
+            --card-border: rgba(255, 255, 255, 0.2);
+            --text-color: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.7);
+            --success-color: #22c55e;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, var(--background-start), var(--background-end));
+            min-height: 100vh;
+            color: var(--text-color);
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .header h1 {
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+            font-weight: 800;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            font-weight: 300;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .status-card {
+            background: var(--card-background);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 35px;
+            border: 1px solid var(--card-border);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            text-align: left;
+        }
+
+        .status-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
+        }
+
+        .status-title-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .status-icon {
+            width: 32px;
+            height: 32px;
+        }
+
+        .status-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .current-team {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 25px rgba(74, 144, 226, 0.2);
+        }
+        .current-team .status-title { color: var(--primary-color); }
+
+        .next-team {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 25px rgba(80, 227, 194, 0.2);
+        }
+        .next-team .status-title { color: var(--secondary-color); }
+
+        .team-name {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 12px;
+            word-break: break-word;
+        }
+
+        .pitch-type {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+            padding: 8px 18px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            display: inline-block;
+        }
+
+        .team-details {
+            font-size: 1rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .no-team {
+            color: var(--text-muted);
+            font-style: italic;
+            font-size: 1.2rem;
+            text-align: center;
+            width: 100%;
+        }
+
+        .pulse {
+            animation: pulse 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 25px rgba(74, 144, 226, 0.2); }
+            50% { box-shadow: 0 0 40px rgba(74, 144, 226, 0.4); }
+            100% { box-shadow: 0 0 25px rgba(74, 144, 226, 0.2); }
+        }
+        
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-align: center;
+            color: var(--text-color);
+        }
+
+        .queue-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .queue-item {
+            background: var(--card-background);
+            padding: 20px;
+            border-radius: 15px;
+            border-left: 5px solid var(--warning-color);
+            transition: transform 0.3s ease, background-color 0.3s ease;
+        }
+
+        .queue-item:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .queue-item-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .queue-item-number {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--warning-color);
+        }
+
+        .queue-item-team {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .queue-item-leader {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            padding-left: 45px; /* Align with team name */
+        }
+
+        .completed-section {
+            background: rgba(34, 197, 94, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 50px;
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .completed-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+        }
+
+        .completed-item {
+            background: rgba(34, 197, 94, 0.1);
+            padding: 15px 20px;
+            border-radius: 12px;
+            text-align: center;
+            transition: background-color 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .completed-item::before {
+            content: '✓';
+            color: var(--success-color);
+            font-weight: 800;
+        }
+
+        .completed-team {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #bbf7d0; /* Lighter green */
+        }
+
+        .live-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--danger-color);
+            color: white;
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            animation: livePulse 1.5s infinite;
+            z-index: 999;
+        }
+        
+        .connection-status {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            z-index: 999;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        .connected { background: var(--success-color); color: white; }
+        .disconnected { background: var(--danger-color); color: white; }
+
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--background-end);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease, visibility 0.5s;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-top-color: var(--text-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        @keyframes livePulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 10px var(--danger-color); }
+            50% { transform: scale(1.05); box-shadow: 0 0 20px var(--danger-color); }
+        }
+
+        @media (max-width: 992px) {
+            .status-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2.5rem; }
+            .team-name { font-size: 2rem; }
+            .live-indicator, .connection-status {
+                position: static;
+                margin: 10px auto;
+                width: fit-content;
+            }
+            .top-indicators {
+                position: absolute;
+                top: 15px;
+                right: 15px;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-spinner"></div>
+        <p>Loading Live Status...</p>
+    </div>
+
+    <div class="top-indicators">
+        <div class="live-indicator">🔴 LIVE</div>
+        <div class="connection-status connected" id="connectionStatus">🟢 Connected</div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🏆 Hackathon Live Status</h1>
+            <p>Real-time presentation progress and upcoming schedule</p>
+        </div>
+
+        <div class="status-grid">
+            <div class="status-card current-team" id="currentTeamCard">
+                <div class="status-title-container">
+                    <svg class="status-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                    <div class="status-title">Now Presenting</div>
+                </div>
+                <div id="currentTeamContent">
+                    <div class="no-team">Waiting for first presentation...</div>
+                </div>
+            </div>
+
+            <div class="status-card next-team" id="nextTeamCard">
+                <div class="status-title-container">
+                    <svg class="status-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
+                    <div class="status-title">Up Next</div>
+                </div>
+                <div id="nextTeamContent">
+                    <div class="no-team">Preparing next team...</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="queue-section" id="queueSection">
+            <div class="section-title">📋 Presentation Queue</div>
+            <div class="queue-list" id="queueList">
+                <div class="no-team" style="grid-column: 1/-1;">Loading teams...</div>
+            </div>
+        </div>
+
+        <div class="completed-section" id="completedSection" style="display: none;">
+            <div class="section-title" style="color: var(--success-color);">✅ Completed</div>
+            <div class="completed-list" id="completedList"></div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-app-compat.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-database-compat.min.js"></script>
+
+    <script>
+        // --- Firebase Configuration ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAA9k_wUy8W4DUGGC59XKLf1SSA0kJpflk",
+            authDomain: "form-e9a10.firebaseapp.com",
+            databaseURL: "https://form-e9a10-default-rtdb.firebaseio.com",
+            projectId: "form-e9a10",
+            storageBucket: "form-e9a10.firebasestorage.app",
+            messagingSenderId: "522860381687",
+            appId: "1:522860381687:web:10def6869ab957940adaf2",
+            measurementId: "G-ZHT6HE42RM"
+        };
+
+        // --- Initialize Firebase ---
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // --- Global State ---
+        let teams = {};
+        let currentOrder = [];
+
+        const pitchTypes = {
+            'elevator': 'Elevator Pitch',
+            'idea': 'Idea Pitch',
+            'midway': 'Midway Pitch',
+            'investor': 'Investor/Business Pitch',
+            'final': 'Final Demo Pitch'
+        };
+
+        // --- DOM Elements ---
+        const loadingScreen = document.getElementById('loadingScreen');
+        const currentTeamContent = document.getElementById('currentTeamContent');
+        const nextTeamContent = document.getElementById('nextTeamContent');
+        const queueList = document.getElementById('queueList');
+        const completedSection = document.getElementById('completedSection');
+        const completedList = document.getElementById('completedList');
+        const currentTeamCard = document.getElementById('currentTeamCard');
+
+        // --- Initialization ---
+        function initializeDisplay() {
+            database.ref('teams').on('value', snapshot => {
+                teams = snapshot.val() || {};
+                updateAllDisplays();
+            });
+
+            database.ref('teamOrder').on('value', snapshot => {
+                currentOrder = snapshot.val() || [];
+                updateAllDisplays();
+            });
+
+            database.ref('.info/connected').on('value', snapshot => {
+                updateConnectionStatus(snapshot.val());
+            });
+
+            setTimeout(() => {
+                loadingScreen.style.opacity = '0';
+                loadingScreen.style.visibility = 'hidden';
+            }, 1000);
+        }
+
+        // --- Core Update Logic ---
+        function updateAllDisplays() {
+            if (!teams || Object.keys(teams).length === 0 || !currentOrder) return;
+            
+            const currentTeam = getCurrentPresentingTeam();
+            const nextTeam = getNextTeam(currentTeam);
+            const queueTeams = getQueueTeams(currentTeam, nextTeam);
+            const completedTeams = getCompletedTeams();
+            
+            updateCurrentPresenting(currentTeam);
+            updateNextTeam(nextTeam);
+            updateQueue(queueTeams);
+            updateCompleted(completedTeams);
+        }
+
+        function updateCurrentPresenting(currentTeam) {
+            if (currentTeam) {
+                const pitchType = pitchTypes[currentTeam.currentPitch] || 'Presentation';
+                currentTeamContent.innerHTML = `
+                    <div class="team-name">${currentTeam.teamName}</div>
+                    <div class="pitch-type">${pitchType}</div>
+                    <div class="team-details">
+                        <b>Leader:</b> ${currentTeam.leader.name}<br>
+                        <b>Department:</b> ${currentTeam.leader.department}
+                    </div>
+                `;
+                currentTeamCard.classList.add('pulse');
+            } else {
+                currentTeamContent.innerHTML = '<div class="no-team">Waiting for the next presentation...</div>';
+                currentTeamCard.classList.remove('pulse');
+            }
+        }
+
+        function updateNextTeam(nextTeam) {
+            if (nextTeam) {
+                nextTeamContent.innerHTML = `
+                    <div class="team-name">${nextTeam.teamName}</div>
+                    <div class="team-details">
+                        <b>Leader:</b> ${nextTeam.leader.name}<br>
+                        <b>Members:</b> ${nextTeam.members.length + 1}
+                    </div>
+                `;
+            } else {
+                nextTeamContent.innerHTML = '<div class="no-team">All presentations are complete!</div>';
+            }
+        }
+
+        function updateQueue(queueTeams) {
+            if (queueTeams.length === 0) {
+                queueList.innerHTML = '<div class="no-team" style="grid-column: 1/-1;">Queue is empty!</div>';
+                return;
+            }
+            queueList.innerHTML = queueTeams.map((team, index) => `
+                <div class="queue-item">
+                    <div class="queue-item-header">
+                        <div class="queue-item-number">#${index + 1}</div>
+                        <div class="queue-item-team">${team.teamName}</div>
+                    </div>
+                    <div class="queue-item-leader">Leader: ${team.leader.name}</div>
+                </div>
+            `).join('');
+        }
+
+        function updateCompleted(completedTeams) {
+            if (completedTeams.length === 0) {
+                completedSection.style.display = 'none';
+                return;
+            }
+            completedSection.style.display = 'block';
+            completedList.innerHTML = completedTeams.map(team => `
+                <div class="completed-item">
+                    <div class="completed-team">${team.teamName}</div>
+                </div>
+            `).join('');
+        }
+        
+        // --- Helper Functions (Improved Logic) ---
+        function getCurrentPresentingTeam() {
+            const presentingId = currentOrder.find(id => teams[id] && teams[id].isPresenting);
+            return presentingId ? teams[presentingId] : null;
+        }
+
+        function getNextTeam(currentTeam) {
+             // Find the first team in the order that is not completed and not currently presenting
+            const nextTeamId = currentOrder.find(id => {
+                const team = teams[id];
+                if (!team) return false;
+                
+                // If there's a team presenting, the next one cannot be them
+                if (currentTeam && team.teamName === currentTeam.teamName) {
+                    return false;
+                }
+                
+                return !team.isCompleted;
+            });
+            return nextTeamId ? teams[nextTeamId] : null;
+        }
+
+        function getQueueTeams(currentTeam, nextTeam) {
+            // The queue is all teams that are not completed, not presenting, and not up next
+            return currentOrder
+                .map(id => teams[id])
+                .filter(team => {
+                    if (!team || team.isCompleted) return false;
+                    if (currentTeam && team.teamName === currentTeam.teamName) return false;
+                    if (nextTeam && team.teamName === nextTeam.teamName) return false;
+                    return true;
+                });
+        }
+
+        function getCompletedTeams() {
+            return currentOrder
+                .map(id => teams[id])
+                .filter(team => team && team.isCompleted);
+        }
+
+        function updateConnectionStatus(connected) {
+            const statusEl = document.getElementById('connectionStatus');
+            if (connected) {
+                statusEl.className = 'connection-status connected';
+                statusEl.innerHTML = '🟢 Connected';
+            } else {
+                statusEl.className = 'connection-status disconnected';
+                statusEl.innerHTML = '🔴 Disconnected';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeDisplay);
+    </script>
+</body>
+</html>
