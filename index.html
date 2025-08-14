@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ERROR 404</title>
+    <title>ERROR 404 Live Status</title>
     <style>
         :root {
             --primary-color: #4a90e2;
@@ -393,14 +393,14 @@
     <script>
         // --- Firebase Configuration ---
         const firebaseConfig = {
-            apiKey: "AIzaSyAA9k_wUy8W4DUGGC59XKLf1SSA0kJpflk",
-            authDomain: "form-e9a10.firebaseapp.com",
-            databaseURL: "https://form-e9a10-default-rtdb.firebaseio.com",
-            projectId: "form-e9a10",
-            storageBucket: "form-e9a10.firebasestorage.app",
-            messagingSenderId: "522860381687",
-            appId: "1:522860381687:web:10def6869ab957940adaf2",
-            measurementId: "G-ZHT6HE42RM"
+           apiKey: "AIzaSyC293rbJspVxRheRyvlBMPiivw8UWNEkjQ",
+  authDomain: "messageapp-47727.firebaseapp.com",
+  databaseURL: "https://messageapp-47727-default-rtdb.firebaseio.com",
+  projectId: "messageapp-47727",
+  storageBucket: "messageapp-47727.appspot.com",
+  messagingSenderId: "121824970903",
+  appId: "1:121824970903:web:2b31ddb44e54f9d80741d2",
+  measurementId: "G-MZFT5YEK7S"
         };
 
         // --- Initialize Firebase ---
@@ -452,7 +452,14 @@
 
         // --- Core Update Logic ---
         function updateAllDisplays() {
-            if (!teams || Object.keys(teams).length === 0 || !currentOrder) return;
+            if (!teams || Object.keys(teams).length === 0 || !currentOrder) {
+                // Display initial loading or no teams message
+                currentTeamContent.innerHTML = '<div class="no-team">Waiting for first presentation...</div>';
+                nextTeamContent.innerHTML = '<div class="no-team">Preparing next team...</div>';
+                queueList.innerHTML = '<div class="no-team" style="grid-column: 1/-1;">No teams in queue.</div>';
+                completedSection.style.display = 'none';
+                return;
+            }
             
             const currentTeam = getCurrentPresentingTeam();
             const nextTeam = getNextTeam(currentTeam);
@@ -533,31 +540,31 @@
         }
 
         function getNextTeam(currentTeam) {
-             // Find the first team in the order that is not completed and not currently presenting
-            const nextTeamId = currentOrder.find(id => {
-                const team = teams[id];
-                if (!team) return false;
-                
-                // If there's a team presenting, the next one cannot be them
-                if (currentTeam && team.teamName === currentTeam.teamName) {
-                    return false;
+            // Find the index of the current presenting team in the order
+            const currentTeamIndex = currentTeam ? currentOrder.indexOf(Object.keys(teams).find(id => teams[id] === currentTeam)) : -1;
+            
+            // Start searching for the next team after the current one's index
+            for (let i = currentTeamIndex + 1; i < currentOrder.length; i++) {
+                const team = teams[currentOrder[i]];
+                if (team && !team.isCompleted) {
+                    return team;
                 }
-                
-                return !team.isCompleted;
-            });
-            return nextTeamId ? teams[nextTeamId] : null;
+            }
+            return null;
         }
 
         function getQueueTeams(currentTeam, nextTeam) {
-            // The queue is all teams that are not completed, not presenting, and not up next
-            return currentOrder
-                .map(id => teams[id])
-                .filter(team => {
-                    if (!team || team.isCompleted) return false;
-                    if (currentTeam && team.teamName === currentTeam.teamName) return false;
-                    if (nextTeam && team.teamName === nextTeam.teamName) return false;
-                    return true;
-                });
+            const queue = [];
+            const presentingTeamId = currentTeam ? Object.keys(teams).find(id => teams[id] === currentTeam) : null;
+            const nextTeamId = nextTeam ? Object.keys(teams).find(id => teams[id] === nextTeam) : null;
+            
+            currentOrder.forEach(id => {
+                const team = teams[id];
+                if (team && !team.isCompleted && id !== presentingTeamId && id !== nextTeamId) {
+                    queue.push(team);
+                }
+            });
+            return queue;
         }
 
         function getCompletedTeams() {
